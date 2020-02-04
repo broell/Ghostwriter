@@ -16,7 +16,7 @@
     <!-- File Upload -->
     <h2>Upload Findings CSV</h2>
     <p>Upload a csv file containing your Nessus findings:</p>
-    <form action="{% url 'reporting:import_nessus' %}" method="POST" enctype="multipart/form-data" class="form-horizontal">
+    <form action="{% url 'reporting:import_findings' %}" method="POST" enctype="multipart/form-data" class="form-horizontal">
         {% csrf_token %}
         <div class="form-group">
             <label for="csv_file" class="csvlabel">
