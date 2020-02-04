@@ -34,7 +34,7 @@ from .views import (
     generate_pptx,
     generate_xlsx,
     import_findings,
-    import_nessus,
+    nessus,
     index,
     position_decrease,
     position_increase,
