@@ -255,6 +255,104 @@ def import_findings(request):
 
 
 @login_required
+def import_nessus(request):
+    """View function for uploading and processing csv files and importing
+    findings.
+    """
+    # If the request is 'GET' return the upload page
+    if request.method == 'GET':
+        return render(request, 'reporting/import_nessus.html')
+    # If not a GET, then proceed
+    """
+    try:
+        # Get the `csv_file` from the POSTed form data
+        csv_file = request.FILES['csv_file']
+        # Do a lame/basic check to see if this is a csv file
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Your file is not a csv!',
+                           extra_tags='alert-danger')
+            return HttpResponseRedirect(reverse('reporting:import_findings'))
+        # The file is loaded into memory, so we must be aware of system limits
+        if csv_file.multiple_chunks():
+            messages.error(request, 'Uploaded file is too big (%.2f MB).' %
+                           (csv_file.size/(1000*1000)),
+                           extra_tags='alert-danger')
+            return HttpResponseRedirect(reverse('reporting:import_findings'))
+    # General catch-all if something goes terribly wrong
+    except Exception as e:
+        messages.error(request, 'Unable to upload/read file: ' + repr(e),
+                       extra_tags='alert-danger')
+        logging.getLogger('error_logger').error('Unable to upload/read file. ' + repr(e))
+    # Loop over the lines and save the domains to the Finding model
+    try:
+        # Try to read the file data from memory
+        csv_file_wrapper = io.StringIO(csv_file.read().decode())
+        csv_reader = csv.DictReader(csv_file_wrapper, delimiter=',')
+    except Exception as e:
+        messages.error(request, 'Unable to parse file: ' + repr(e),
+                       extra_tags='alert-danger')
+        logging.getLogger('error_logger').error('Unable to parse file. ' + repr(e))
+        return HttpResponseRedirect(reverse('reporting:import_findings'))
+    try:
+        error_count = 0
+        # Process each csv row and commit it to the database
+        for entry in csv_reader:
+            if error_count > 5:
+                raise Exception("Too many errors.  Discontinuing import.")
+            pprint(entry)
+            title = entry.get('title', None)
+            if title is None:
+                messages.error(request, 'Missing title field', extra_tags='alert-danger')
+                logging.getLogger('error_logger').error('Missing title field')
+                error_count += 1
+                continue
+
+            logging.getLogger('error_logger').info('Adding %s to the database',
+                                                   entry['title'])
+            # Create a Severity object for the provided rating (e.g. High)
+            severity_entry = entry.get('severity', 'Informational')
+            try:
+                severity = Severity.objects.get(severity__iexact=severity_entry)
+            except Severity.DoesNotExist:
+                severity = Severity(severity=severity_entry)
+                severity.save()
+
+            # Create a FindingType object for the provided type (e.g. Network)
+            type_entry = entry.get('finding_type', 'Network')
+            try:
+                finding_type = FindingType.objects.get(finding_type__iexact=type_entry)
+            except FindingType.DoesNotExist:
+                finding_type = FindingType(finding_type=type_entry)
+                finding_type.save()
+
+            try:
+                instance, created = Finding.objects.update_or_create(
+                    title=entry.get('title')
+                )
+                for attr, value in entry.items():
+                    if attr not in ['severity', 'finding_type']:
+                        setattr(instance, attr, value)
+                instance.severity = severity
+                instance.finding_type = finding_type
+                instance.save()
+            except Exception as e:
+                messages.error(request, 'Failed parsing %s: %s' %
+                               (entry['title'], e), extra_tags='alert-danger')
+                logging.getLogger('error_logger').error(repr(e))
+                error_count += 1
+                pass
+
+        messages.success(request, 'Your csv file has been imported '
+                         'successfully =)', extra_tags='alert-success')
+
+    except Exception as e:
+        messages.error(request, str(e), extra_tags='alert-danger')
+        logging.getLogger('error_logger').error(repr(e))
+    """
+    return HttpResponseRedirect(reverse('reporting:import_nessus'))
+
+
+@login_required
 def assign_finding(request, pk):
     """View function for adding a finding to the user's active report."""
     def get_position(report_pk):
