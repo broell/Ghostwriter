@@ -125,6 +125,7 @@ urlpatterns += [
 # URLs for management functions
 urlpatterns += [
                 path('import/csv/', import_findings, name='import_findings'),
-                path('import/nessus/', import_nessus, name="import_nessus"),
+                #path('import/nessus/', import_nessus, name="import_nessus"),
+                path('reporting/nessus/', import_nessus, name='nessus'),
                 path('export/csv/', export_findings_to_csv, name='export_findings_to_csv'),
                ]
